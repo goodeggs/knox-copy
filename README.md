@@ -18,7 +18,7 @@ client = knoxCopy.createClient
 client.copyBucket
   fromBucket: 'uploads'
   fromPrefix: '/nom-nom'
-  toPrefix: "/copy_bucket/#{new Date().toISOString()}"
+  toPrefix: "/upload_backups/#{new Date().toISOString()}"
   (err, count) ->
      console.log "Copied #{count} files"
 ```
