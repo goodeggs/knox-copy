@@ -5,10 +5,10 @@
   "keywords": ["copy bucket", "list bucket", "s3", "aws", "knox"],
   "repository": {
     "type": "git",
-    "url": "https://github.com/hurrymaplelad/knox-copy.git"
+    "url": "https://github.com/goodeggs/knox-copy.git"
   },
   "bugs": {
-    "url": "https://github.com/hurrymaplelad/knox-copy/issues"
+    "url": "https://github.com/goodeggs/knox-copy/issues"
   },
   "contributors": [
     "Adam Hull <adam@hmlad.com>"
