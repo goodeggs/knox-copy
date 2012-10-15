@@ -3,6 +3,12 @@ knox-copy
 
 Extends the Knox Node Amazon S3 client to support copying and listing buckets
 
+## Install
+
+``` sh
+npm install knox-copy
+```
+
 ## Examples
 
 [Stream] the keys of all the files in a bucket:
