@@ -23,7 +23,7 @@ client = knoxCopy.createClient
   secret: '<secret-here>'
   bucket: 'mrbucket'
 
-client.stream(prefix: 'buckets/of/fun')
+client.streamKeys(prefix: 'buckets/of/fun')
 .on 'data', (key) -> console.log key
 ```
 
