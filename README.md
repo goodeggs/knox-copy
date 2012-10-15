@@ -5,6 +5,21 @@ Extends the Knox Node Amazon S3 client to support copying and listing buckets
 
 ## Examples
 
+[Stream] the keys of all the files in a bucket:
+``` coffeescript
+knoxCopy = require 'knox-copy'
+
+client = knoxCopy.createClient
+  key: '<api-key-here>'
+  secret: '<secret-here>'
+  bucket: 'mrbucket'
+
+client.stream(prefix: 'buckets/of/fun')
+.on 'data', (key) -> console.log key
+```
+
+[Stream]: http://nodejs.org/api/stream.html#stream_readable_stream
+
 Backup a bucket full of uploads:
 
 ``` coffeescript

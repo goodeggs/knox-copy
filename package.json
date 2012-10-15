@@ -1,6 +1,6 @@
 {
   "name": "knox-copy",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Extends the Knox Node Amazon S3 client to support copying and listing buckets",
   "keywords": ["copy bucket", "list bucket", "s3", "aws", "knox"],
   "repository": {

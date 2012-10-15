@@ -13,7 +13,6 @@ catch err
 
 
 describe 'knox-copy', ->
-
   describe 'with a file', ->
     beforeEach (done) ->
       client.putBuffer 'test file', '/tmp/spec/test_file', done
@@ -28,7 +27,7 @@ describe 'knox-copy', ->
         done)
 
     describe 'copyFromBucket()', ->
-      it 'copies from any bucket', (done) ->
+      it 'should copy from any bucket', (done) ->
         client.copyFromBucket bucket,
           '/tmp/spec/test_file',
           '/tmp/spec/test_file_copy',
@@ -38,7 +37,7 @@ describe 'knox-copy', ->
             done()
 
   describe 'with 4 files', ->
-    keys = [1..4].map (n) -> "/tmp/spec/list/file_#{n}"
+    keys = [1..4].map (n) -> "tmp/spec/list/file_#{n}"
 
     beforeEach (done) ->
       parallel(
@@ -51,11 +50,11 @@ describe 'knox-copy', ->
         keys.map (key) -> (cb) ->
           client.deleteFile key, cb
         done)
-
-    describe 'listBucketPage()', ->
-      it 'lists a page of S3 Object keys', (done) ->
+ 
+    describe 'listPageOfKeys()', ->
+      it 'should list a page of S3 Object keys', (done) ->
         # Middle 2 of 4 files
-        client.listBucketPage
+        client.listPageOfKeys 
           maxKeys: 2
           prefix: '/tmp/spec/list'
           marker: '/tmp/spec/list/file_1'
@@ -66,7 +65,7 @@ describe 'knox-copy', ->
             done()
 
         # Last of 4 files
-        client.listBucketPage
+        client.listPageOfKeys 
           maxKeys: 4
           prefix: '/tmp/spec/list'
           marker: '/tmp/spec/list/file_3'
@@ -77,7 +76,7 @@ describe 'knox-copy', ->
             done()
 
         # Marker at the end
-        client.listBucketPage
+        client.listPageOfKeys 
           maxKeys: 4
           prefix: '/tmp/spec/list'
           marker: '/tmp/spec/list/file_4'
@@ -88,7 +87,7 @@ describe 'knox-copy', ->
             done()
 
         # Empty prefix
-        client.listBucketPage
+        client.listPageOfKeys 
           maxKeys: 4
           prefix: '/does_not_exist'
           (err, page) ->
@@ -96,6 +95,15 @@ describe 'knox-copy', ->
             expect(page.IsTruncated).toBeFalsy()
             expect(page.Contents.length).toBe 0
             done()
+
+    describe 'streamKeys()', ->
+      it 'should emit a data event for every key and an end event when keys are exhausted', (done) ->
+        streamedKeys = []
+        stream = client.streamKeys(prefix: '/tmp/spec/list')
+        stream.on 'data', (key) -> streamedKeys.push key
+        stream.on 'end', ->
+          expect(streamedKeys).toEqual keys
+          done()
 
     describe 'copyBucket()', ->
 
@@ -105,7 +113,7 @@ describe 'knox-copy', ->
             client.deleteFile "/tmp/spec/copy_bucket/file_#{n}", cb
           done)
 
-      it 'copies a prefixed set of files across buckets', (done) ->
+      it 'should copy a prefixed set of files across buckets', (done) ->
         client.copyBucket
           fromBucket: bucket # this is the default value.  Included here to show where you'd set a different bucket
           fromPrefix: '/tmp/spec/list'
