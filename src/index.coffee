@@ -146,7 +146,7 @@ knox::copyBucket = ({fromBucket, fromPrefix, toPrefix}, cb) ->
         if err?
           fail err
         else if res.statusCode isnt 200
-          fail {key, statusCode: res.statusCode}
+          fail new Error "#{res.statusCode} response copying key #{key}"
         else
           count++
         done()
