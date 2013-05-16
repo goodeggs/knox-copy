@@ -22,13 +22,13 @@
   "license": "MIT",
   "main": "./lib/index.js",
   "dependencies": {
-    "knox": "0.3.x",
-    "async": "0.1.x",
+    "knox": "~0.8.0",
+    "async": "~0.2.8",
     "xml2js": "0.2.x"
   },
   "devDependencies": {
-    "jasmine-node": "1.0.x",
-    "coffee-script": "1.3.x"
+    "jasmine-node": "~1.7.1",
+    "coffee-script": "~1.6.2"
   },
   "engine": {
     "node": ">=0.8"
