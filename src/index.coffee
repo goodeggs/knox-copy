@@ -4,6 +4,10 @@ qs = require 'querystring'
 knox = require 'knox'
 {Parser} = require 'xml2js'
 KeyStream = require './key_stream'
+backoff = require('oibackoff').backoff
+  algorithm: 'exponential'
+  delayRatio: 0.5
+  maxTries: 4
 
 stripLeadingSlash = (key) -> key.replace /^\//, ''
 
@@ -142,14 +146,21 @@ knox::copyBucket = ({fromBucket, fromPrefix, toPrefix}, cb) ->
     concurrency: 5
     worker: (key, done) =>
       toKey = swapPrefix(key, fromPrefix, toPrefix)
-      @copyFromBucket fromBucket, key, toKey, (err, res) ->
-        if err?
-          fail err
-        else if res.statusCode isnt 200
-          fail new Error "#{res.statusCode} response copying key #{key}"
-        else
+      backoff(
+        (cb) =>
+          @copyFromBucket fromBucket, key, toKey, (err, res) ->
+            if err?
+              cb err
+            else if res.statusCode isnt 200
+              cb new Error "#{res.statusCode} response copying key #{key}"
+            else
+              cb()
+        (err) =>
+          if err?
+            fail err
           count++
-        done()
+          done()
+      )
     done: ->
       if not failed
         cb null, count 

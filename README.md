@@ -3,7 +3,7 @@ knox-copy
 
 [![Dependency Status](https://david-dm.org/goodeggs/knox-copy.png)](https://david-dm.org/goodeggs/knox-copy)
 
-Extends the Knox Node Amazon S3 client to support copying and listing buckets
+Extends the Knox Node Amazon S3 client to support copying and listing arbitrarily large buckets.  Transparently streams keys and copies files from buckets that exceed Amazon's [1000 key page size limit](http://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketGET.html).
 
 ## Install
 

@@ -5,9 +5,11 @@
   "keywords": [
     "copy bucket",
     "list bucket",
+    "stream keys",
     "s3",
     "aws",
-    "knox"
+    "knox",
+    "retry"
   ],
   "repository": {
     "type": "git",
@@ -24,7 +26,8 @@
   "dependencies": {
     "knox": "~0.8.0",
     "async": "~0.2.8",
-    "xml2js": "0.2.x"
+    "xml2js": "0.2.x",
+    "oibackoff": "~0.2.0"
   },
   "devDependencies": {
     "jasmine-node": "~1.7.1",
