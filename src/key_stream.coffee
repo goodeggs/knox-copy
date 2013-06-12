@@ -24,17 +24,16 @@ module.exports = class KeyStream extends Stream
   # true once a data event has been emitted for every key.
   allKeysStreamed: false
 
-  # number of keys to list per request.  The stream queue caps at ~1.5x this size.
-  maxKeysPerRequest: 500
-
   # pagination index
   marker: null
 
-  # queue of keys returned from Amazon but not yet iterated
-  keyQueue: null
-
-  constructor: ({@client, @prefix}) ->
+  constructor: ({@client, @prefix, @maxKeysPerRequest}) ->
+    # queue of keys returned from Amazon but not yet iterated
     @keyQueue = []
+
+    # number of keys to list per request.  The stream queue caps at ~1.5x this size.
+    @maxKeysPerRequest ?= 500
+
     @_replenishKeys @_continueStreaming
 
   pause: ->
@@ -49,7 +48,7 @@ module.exports = class KeyStream extends Stream
     @allKeysStreamed
 
   _keysRunningLow: -> 
-      @keyQueue.length < (@maxKeysPerRequest / 2)
+      @keyQueue.length <= (@maxKeysPerRequest / 2)
   
   _continueStreaming: =>
     while @keyQueue.length > 0
@@ -61,7 +60,7 @@ module.exports = class KeyStream extends Stream
         # Don't want to double end!
         @_replenishKeys =>
           nextTick =>
-            @_continueStreaming
+            @_continueStreaming()
 
       @emit 'data', @keyQueue.shift() 
 

@@ -97,13 +97,24 @@ describe 'knox-copy', ->
             done()
 
     describe 'streamKeys()', ->
-      it 'should emit a data event for every key and an end event when keys are exhausted', (done) ->
-        streamedKeys = []
-        stream = client.streamKeys(prefix: '/tmp/spec/list')
-        stream.on 'data', (key) -> streamedKeys.push key
-        stream.on 'end', ->
-          expect(streamedKeys).toEqual keys
-          done()
+      describe 'when all keys fit on single a page', ->
+        it 'should emit a data event for every key and an end event when keys are exhausted', (done) ->
+          streamedKeys = []
+          stream = client.streamKeys(prefix: '/tmp/spec/list')
+          stream.on 'data', (key) -> streamedKeys.push key
+          stream.on 'end', ->
+            expect(streamedKeys).toEqual keys
+            done()
+
+      describe 'when the number of keys exceeds page size', ->
+        maxKeysPerRequest = 2
+        it 'should emit a data event for every key and an end event when keys are exhausted', (done) ->
+          streamedKeys = []
+          stream = client.streamKeys({prefix: '/tmp/spec/list', maxKeysPerRequest})
+          stream.on 'data', (key) -> streamedKeys.push key
+          stream.on 'end', ->
+            expect(streamedKeys).toEqual keys
+            done()
 
     describe 'copyBucket()', ->
 

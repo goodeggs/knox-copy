@@ -97,8 +97,8 @@ knox::listPageOfKeys = ({maxKeys, marker, prefix, headers}, cb) ->
     else
       cb null, page
 
-knox::streamKeys = ({prefix}) ->
-  return new KeyStream {prefix, client: @}
+knox::streamKeys = ({prefix, maxKeysPerRequest}={}) ->
+  return new KeyStream {prefix, client: @, maxKeysPerRequest}
 
 # Like async.queue but pauses stream instead of queing
 # worker gets stream data and a callback to call when the work is done
