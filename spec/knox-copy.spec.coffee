@@ -2,41 +2,19 @@ knoxCopy = require '..'
 fs = require 'fs'
 {parallel} = require 'async'
 
-try
-  auth = JSON.parse fs.readFileSync('auth', 'ascii')
-  bucket = auth.bucket
-  client = knoxCopy.createClient auth
-catch err
-  console.error 'The tests require ./auth to contain a JSON string with'
-  console.error '`key, secret, and bucket in order to run tests.'
-  process.exit 1
-
-
 describe 'knox-copy', ->
-  describe 'with a file', ->
-    beforeEach (done) ->
-      client.putBuffer 'test file', '/tmp/spec/test_file', done
+  {key, bucket, client} = {}
 
-    afterEach (done) ->
-      parallel(
-        [
-          '/tmp/spec/test_file'
-          '/tmp/spec/test_file_copy'
-        ].map (key) -> (cb) ->
-          client.deleteFile(key, cb)
-        done)
+  beforeEach ->
+    try
+      {key, secret, bucket} = JSON.parse fs.readFileSync('auth', 'ascii')
+      client = knoxCopy.createClient {key, secret, bucket}
+    catch err
+      console.error 'The tests require ./auth to contain a JSON string with'
+      console.error '`key, secret, and bucket in order to run tests.'
+      process.exit 1
 
-    describe 'copyFromBucket()', ->
-      it 'should copy from any bucket', (done) ->
-        client.copyFromBucket bucket,
-          '/tmp/spec/test_file',
-          '/tmp/spec/test_file_copy',
-          (err, response) ->
-            expect(err).toBeFalsy()
-            expect(response.statusCode).toEqual 200
-            done()
-
-  describe 'with 4 files', ->
+  with4Files = (body) ->
     keys = [1..4].map (n) -> "tmp/spec/list/file_#{n}"
 
     beforeEach (done) ->
@@ -50,11 +28,38 @@ describe 'knox-copy', ->
         keys.map (key) -> (cb) ->
           client.deleteFile key, cb
         done)
- 
-    describe 'listPageOfKeys()', ->
+
+    describe 'with 4 files', ->
+      body(keys)
+
+  describe 'copyFromBucket()', ->
+    describe 'with a file', ->
+      beforeEach (done) ->
+        client.putBuffer 'test file', '/tmp/spec/test_file', done
+
+      afterEach (done) ->
+        parallel(
+          [
+            '/tmp/spec/test_file'
+            '/tmp/spec/test_file_copy'
+          ].map (key) -> (cb) ->
+            client.deleteFile(key, cb)
+          done)
+
+      it 'should copy from any bucket', (done) ->
+        client.copyFromBucket bucket,
+          '/tmp/spec/test_file',
+          '/tmp/spec/test_file_copy',
+          (err, response) ->
+            expect(err).toBeFalsy()
+            expect(response.statusCode).toEqual 200
+            done()
+
+  describe 'listPageOfKeys()', ->
+    with4Files (keys) ->
       it 'should list a page of S3 Object keys', (done) ->
         # Middle 2 of 4 files
-        client.listPageOfKeys 
+        client.listPageOfKeys
           maxKeys: 2
           prefix: '/tmp/spec/list'
           marker: '/tmp/spec/list/file_1'
@@ -65,7 +70,7 @@ describe 'knox-copy', ->
             done()
 
         # Last of 4 files
-        client.listPageOfKeys 
+        client.listPageOfKeys
           maxKeys: 4
           prefix: '/tmp/spec/list'
           marker: '/tmp/spec/list/file_3'
@@ -76,7 +81,7 @@ describe 'knox-copy', ->
             done()
 
         # Marker at the end
-        client.listPageOfKeys 
+        client.listPageOfKeys
           maxKeys: 4
           prefix: '/tmp/spec/list'
           marker: '/tmp/spec/list/file_4'
@@ -87,7 +92,7 @@ describe 'knox-copy', ->
             done()
 
         # Empty prefix
-        client.listPageOfKeys 
+        client.listPageOfKeys
           maxKeys: 4
           prefix: '/does_not_exist'
           (err, page) ->
@@ -96,7 +101,8 @@ describe 'knox-copy', ->
             expect(page.Contents.length).toBe 0
             done()
 
-    describe 'streamKeys()', ->
+  describe 'streamKeys()', ->
+    with4Files (keys) ->
       describe 'when all keys fit on single a page', ->
         it 'should emit a data event for every key and an end event when keys are exhausted', (done) ->
           streamedKeys = []
@@ -116,8 +122,8 @@ describe 'knox-copy', ->
             expect(streamedKeys).toEqual keys
             done()
 
-    describe 'copyBucket()', ->
-
+  describe 'copyBucket()', ->
+    with4Files (keys) ->
       afterEach (done) ->
         parallel(
           [1..4].map (n) -> (cb) ->
@@ -134,3 +140,44 @@ describe 'knox-copy', ->
             # returns the number of copied objects
             expect(count).toBe 4
             done()
+
+    describe 'with funky filenames', ->
+      filenames = [
+        '26c4SLYIQxeTWiG3dZ2Q_fruit and flour.png'
+        'NiU7pBioQeyz5cTNJyzX_MarkBreadMED05%20-%20cropped.jpg'
+      ]
+      sourceKeys = filenames.map((filename) -> "/tmp/spec/spaces/#{filename}")
+      destinationKeys = filenames.map((filename) -> "tmp/spec/copy_spaces/#{filename}")
+
+      beforeEach (done) ->
+        parallel(
+          sourceKeys.map (key) -> (cb) ->
+            client.putBuffer 'test file', encodeURI(key), cb
+          done
+        )
+
+      afterEach (done) ->
+        parallel(
+          sourceKeys
+          .concat(destinationKeys)
+          .map((key) -> (cb) ->
+            client.deleteFile(key, cb)
+          ), done)
+
+      it 'should copy and preserve filenames', (done) ->
+        client.copyBucket
+          fromBucket: bucket # this is the default value.  Included here to show where you'd set a different bucket
+          fromPrefix: '/tmp/spec/spaces'
+          toPrefix: '/tmp/spec/copy_spaces'
+          (err, count) ->
+            expect(err).toBeFalsy()
+            # returns the number of copied objects
+            expect(count).toBe 2
+
+            client.listPageOfKeys
+              maxKeys: 2
+              prefix: '/tmp/spec/copy_spaces'
+              (err, page) ->
+                expect(err).toBeFalsy()
+                expect(Key for {Key} in page.Contents).toEqual destinationKeys
+                done()

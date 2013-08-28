@@ -38,9 +38,9 @@ knox::copyFromBucket = (fromBucket, fromKey, toKey, headers, cb) ->
     cb = headers
     headers = {}
 
-  headers['x-amz-copy-source'] = "/#{fromBucket}/#{stripLeadingSlash fromKey}"
+  headers['x-amz-copy-source'] = encodeURI "/#{fromBucket}/#{stripLeadingSlash fromKey}"
   headers['Content-Length'] = 0 # avoid chunking
-  req = @request 'PUT', toKey, headers
+  req = @request 'PUT', encodeURI(toKey), headers
 
   if cb?
     req.on('response', (res) -> cb(null, res))
@@ -107,7 +107,7 @@ workOffStream = ({stream, concurrency, worker, done}) ->
   workerCount = 0
   done ?= ->
 
-  stream.on 'end', -> 
+  stream.on 'end', ->
     ended = true
     if workerCount is 0
       done()
@@ -141,7 +141,7 @@ knox::copyBucket = ({fromBucket, fromPrefix, toPrefix}, cb) ->
   keyStream = fromClient.streamKeys prefix: fromPrefix
   keyStream.on 'error', fail
 
-  workOffStream 
+  workOffStream
     stream: keyStream
     concurrency: 5
     worker: (key, done) =>
@@ -163,6 +163,6 @@ knox::copyBucket = ({fromBucket, fromPrefix, toPrefix}, cb) ->
       )
     done: ->
       if not failed
-        cb null, count 
+        cb null, count
 
 module.exports = knox
