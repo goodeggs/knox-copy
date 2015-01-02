@@ -8,6 +8,7 @@ backoff = require('oibackoff').backoff
   algorithm: 'exponential'
   delayRatio: 0.5
   maxTries: 4
+streamWorker = require 'stream-worker'
 
 stripLeadingSlash = (key) -> key.replace /^\//, ''
 
@@ -81,28 +82,6 @@ knox::listPageOfKeys = ({maxKeys, marker, prefix, headers}, cb) ->
 knox::streamKeys = ({prefix, maxKeysPerRequest}={}) ->
   return new KeyStream {prefix, client: @, maxKeysPerRequest}
 
-# Like async.queue but pauses stream instead of queing
-# worker gets stream data and a callback to call when the work is done
-workOffStream = ({stream, concurrency, worker, done}) ->
-  ended = false
-  workerCount = 0
-  done ?= ->
-
-  stream.on 'end', ->
-    ended = true
-    if workerCount is 0
-      done()
-
-  stream.on 'data', (data) ->
-    if ++workerCount > concurrency
-      stream.pause()
-    worker data, ->
-      --workerCount
-      if ended and workerCount is 0
-        done()
-      else
-        stream.resume()
-
 knox::copyBucket = ({fromBucket, fromPrefix, toPrefix}, cb) ->
   fromBucket ?= @bucket
   fromClient = knox.createClient {@key, @secret, bucket: fromBucket}
@@ -122,10 +101,8 @@ knox::copyBucket = ({fromBucket, fromPrefix, toPrefix}, cb) ->
   keyStream = fromClient.streamKeys prefix: fromPrefix
   keyStream.on 'error', fail
 
-  workOffStream
-    stream: keyStream
-    concurrency: 5
-    worker: (key, done) =>
+  streamWorker keyStream, 5,
+    (key, done) =>
       toKey = swapPrefix(key, fromPrefix, toPrefix)
       backoff(
         (cb) =>
@@ -142,7 +119,7 @@ knox::copyBucket = ({fromBucket, fromPrefix, toPrefix}, cb) ->
           count++
           done()
       )
-    done: ->
+    ->
       if not failed
         cb null, count
 

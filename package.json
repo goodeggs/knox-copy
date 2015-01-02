@@ -1,6 +1,6 @@
 {
   "name": "knox-copy",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Extends the Knox Node Amazon S3 client to support copying and listing buckets",
   "keywords": [
     "copy bucket",
@@ -26,8 +26,9 @@
   "dependencies": {
     "knox": "0.9.x",
     "async": "~0.2.8",
-    "xml2js": "0.2.x",
-    "oibackoff": "~0.2.0"
+    "stream-worker": "0.0.1",
+    "oibackoff": "~0.2.0",
+    "xml2js": "0.2.x"
   },
   "devDependencies": {
     "jasmine-node": "~1.7.1",
