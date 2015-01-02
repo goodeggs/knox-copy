@@ -29,25 +29,6 @@ guzzle = (stream, cb) ->
   stream.on 'end', ->
     cb null, Buffer.concat(buffers)
 
-
-###
-Returns an http request.  Optional callback receives the response.
-###
-knox::copyFromBucket = (fromBucket, fromKey, toKey, headers, cb) ->
-  if typeof headers is 'function'
-    cb = headers
-    headers = {}
-
-  headers['x-amz-copy-source'] = encodeURI "/#{fromBucket}/#{stripLeadingSlash fromKey}"
-  headers['Content-Length'] = 0 # avoid chunking
-  req = @request 'PUT', encodeURI(toKey), headers
-
-  if cb?
-    req.on('response', (res) -> cb(null, res))
-    req.on('error', (err) -> cb new Error("Error copying #{fromKey}:", err))
-    req.end()
-  return req
-
 ###
 Callback gets a JSON representation of a page of S3 Object keys.
 ###
@@ -148,7 +129,7 @@ knox::copyBucket = ({fromBucket, fromPrefix, toPrefix}, cb) ->
       toKey = swapPrefix(key, fromPrefix, toPrefix)
       backoff(
         (cb) =>
-          @copyFromBucket fromBucket, key, toKey, (err, res) ->
+          fromClient.copyFileTo key, @bucket, toKey, (err, res) ->
             if err?
               cb err
             else if res.statusCode isnt 200

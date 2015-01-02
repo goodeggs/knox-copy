@@ -32,29 +32,6 @@ describe 'knox-copy', ->
     describe 'with 4 files', ->
       body(keys)
 
-  describe 'copyFromBucket()', ->
-    describe 'with a file', ->
-      beforeEach (done) ->
-        client.putBuffer 'test file', '/tmp/spec/test_file', done
-
-      afterEach (done) ->
-        parallel(
-          [
-            '/tmp/spec/test_file'
-            '/tmp/spec/test_file_copy'
-          ].map (key) -> (cb) ->
-            client.deleteFile(key, cb)
-          done)
-
-      it 'should copy from any bucket', (done) ->
-        client.copyFromBucket bucket,
-          '/tmp/spec/test_file',
-          '/tmp/spec/test_file_copy',
-          (err, response) ->
-            expect(err).toBeFalsy()
-            expect(response.statusCode).toEqual 200
-            done()
-
   describe 'listPageOfKeys()', ->
     with4Files (keys) ->
       it 'should list a page of S3 Object keys', (done) ->
@@ -143,8 +120,8 @@ describe 'knox-copy', ->
 
     describe 'with funky filenames', ->
       filenames = [
-        '26c4SLYIQxeTWiG3dZ2Q_fruit and flour.png'
-        'NiU7pBioQeyz5cTNJyzX_MarkBreadMED05%20-%20cropped.jpg'
+        'fruit and flour.png'
+        'MarkBreadMED05%20-%20cropped.jpg'
       ]
       sourceKeys = filenames.map((filename) -> "/tmp/spec/spaces/#{filename}")
       destinationKeys = filenames.map((filename) -> "tmp/spec/copy_spaces/#{filename}")
@@ -152,7 +129,7 @@ describe 'knox-copy', ->
       beforeEach (done) ->
         parallel(
           sourceKeys.map (key) -> (cb) ->
-            client.putBuffer 'test file', encodeURI(key), cb
+            client.putBuffer 'test file', key, cb
           done
         )
 
@@ -179,5 +156,7 @@ describe 'knox-copy', ->
               prefix: '/tmp/spec/copy_spaces'
               (err, page) ->
                 expect(err).toBeFalsy()
-                expect(Key for {Key} in page.Contents).toEqual destinationKeys
+                expect(
+                  (Key for {Key} in page.Contents).sort()
+                ).toEqual destinationKeys.sort()
                 done()
