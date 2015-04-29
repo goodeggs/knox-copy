@@ -84,7 +84,7 @@ knox::streamKeys = ({prefix, maxKeysPerRequest}={}) ->
 
 knox::copyBucket = ({fromBucket, fromPrefix, toPrefix}, cb) ->
   fromBucket ?= @bucket
-  fromClient = knox.createClient {@key, @secret, bucket: fromBucket}
+  fromClient = knox.createClient {@key, @secret, bucket: fromBucket, @token}
   fromPrefix = fromPrefix and stripLeadingSlash(fromPrefix) or ''
   toPrefix = toPrefix and stripLeadingSlash(toPrefix) or ''
 
