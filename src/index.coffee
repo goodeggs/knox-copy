@@ -82,7 +82,7 @@ knox::listPageOfKeys = ({maxKeys, marker, prefix, headers}, cb) ->
 knox::streamKeys = ({prefix, maxKeysPerRequest}={}) ->
   return new KeyStream {prefix, client: @, maxKeysPerRequest}
 
-knox::copyBucket = ({fromBucket, fromPrefix, toPrefix}, cb) ->
+knox::copyBucket = ({fromBucket, fromPrefix, toPrefix, headers}, cb) ->
   fromBucket ?= @bucket
   fromClient = knox.createClient {@key, @secret, bucket: fromBucket, @token}
   fromPrefix = fromPrefix and stripLeadingSlash(fromPrefix) or ''
@@ -106,7 +106,7 @@ knox::copyBucket = ({fromBucket, fromPrefix, toPrefix}, cb) ->
       toKey = swapPrefix(key, fromPrefix, toPrefix)
       backoff(
         (cb) =>
-          fromClient.copyFileTo key, @bucket, toKey, (err, res) ->
+          fromClient.copyFileTo key, @bucket, toKey, headers, (err, res) ->
             if err?
               cb err
             else if res.statusCode isnt 200
